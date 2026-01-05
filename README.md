@@ -65,3 +65,4 @@ First build the binary in release mode using the instructions above, then do the
 ```sh
 agb-gbafix target/thumbv4t-none-eabi/release/<your game> -o <your game>.gba
 ```
+# retro-agb-game
