@@ -14,91 +14,48 @@
 // until you declare the extern crate. `agb` provides an allocator so it will all work
 extern crate alloc;
 
+mod game;
+
+use game::Player;
+
 use agb::{
     include_aseprite,
     display::object::Object,
-    input::{ ButtonController, Tri },
-    fixnum::{ vec2, Vector2D }
+    input::{ ButtonController },
+    fixnum::{ vec2 }
 };
 
 include_aseprite!(
     mod sprites,
     "gfx/sprites.aseprite"
 );
-// The main function must take 1 arguments and never returns, and must be marked with
-// the #[agb::entry] macro.
-// build & run .gba game
-// cargo build --release
-// agb-gbafix target/thumbv4t-none-eabi/release/hero -o hero.gba
-
-struct Player {
-    // vel: Vector2D<i32>,
-    pos: Vector2D<i32>,
-    speed: i32,
-    obj: Object,
-}
 
 #[agb::entry]
 fn main(mut gba: agb::Gba) -> ! {
+    const PADDING_X: i32 = 8;
+    const PADDING_Y: i32 = 24;
     // Get the graphics manager, responsible for all the graphics
     let mut gfx = gba.graphics.get();
     let mut input = ButtonController::new();
-    let mut player = Player {
-        pos: vec2(50,50),
-        speed: 1,
-        obj: Object::new(sprites::BALL.sprite(0))
-    };
-    player.obj.set_pos(player.pos);
-    // Start a frame and add the one object to it
+    let mut player = Player::new(
+        vec2(agb::display::WIDTH/2 - PADDING_X,agb::display::HEIGHT - PADDING_Y),
+        1,
+        Object::new(sprites::SHIP.sprite(0))
+    );
+    player.update();
     let mut frame = gfx.frame();
+
     player.obj.show(&mut frame);
-    // Until the call to `frame.commit()`, nothing will be displayed
     frame.commit();
 
     loop {
         input.update();
-
-        match input.x_tri() {
-            Tri::Positive => {
-                player.pos.x = (
-                    player.pos.x + player.speed
-                ).clamp(0, agb::display::WIDTH - 16);
-            },
-            Tri::Negative => {
-                player.pos.x = (
-                    player.pos.x - player.speed
-                ).clamp(0, agb::display::WIDTH - 16);
-            },
-            Tri::Zero => {},
-        }
-
-        match input.y_tri() {
-            Tri::Positive => {
-                player.pos.y = (
-                    player.pos.y + player.speed
-                ).clamp(0, agb::display::HEIGHT - 16);
-            },
-            Tri::Negative => {
-                player.pos.y = (
-                    player.pos.y - player.speed
-                ).clamp(0, agb::display::HEIGHT - 16);
-            },
-            Tri::Zero => {},
-        }
-        // if player.pos.x == 0 || player.pos.x == agb::display::WIDTH - 16 {
-        //     vel.x = -vel.x;
-        // }
-        // if player.pos.y == 0 || player.pos.y == agb::display::HEIGHT - 16 {
-        //     vel.y = -vel.y;
-        // }
-
-        // Set the position of the ball to match our new calculated position
-        player.obj.set_pos(player.pos);
-
+        player.handle_input(input.x_tri());
+        player.update();
         // prepare the frame
         let mut frame = gfx.frame();
-        player.obj.show(&mut frame);
 
+        player.obj.show(&mut frame);
         frame.commit();
     }
 }
